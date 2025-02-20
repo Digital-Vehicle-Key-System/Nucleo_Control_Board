@@ -51,7 +51,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+#include "../../Services/Comm_ControlBoard_Connectivity/Comm_ControlBoard_Connectivity_int.h"
+#include "../../Services/Comm_ControlBoard_Connectivity/Comm_ControlBoard_Connectivity_config.h"
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -90,6 +91,16 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+//  Comm_CtrlBoard_Connectivity_voidInit();
+//
+//  uint8_t *ptr = ADDRESS_SOURCE_DATA;
+//  for(int i = 0; i < 100; i++)
+//  {
+//	  ptr[i] = i;
+//  }
+
+//  Comm_CtrlBoard_Connectivity_voidStart_CommunicationTx(ptr, 100);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -98,6 +109,7 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
+//	  Comm_CtrlBoard_Connectivity_voidStart_CommunicationTx(ptr, 100);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

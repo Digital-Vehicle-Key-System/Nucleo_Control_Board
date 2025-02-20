@@ -52,7 +52,23 @@ UART_HandleTypeDef huart_comm_ctrlboard_connectivity =
 		.Init.OverSampling = UART_OVERSAMPLING_16,
 };
 
-DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity =
+/* USART1 DMA Init */
+/* USART1_TX Init */
+DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity_tx =
+{
+		.Instance = DMA2_Stream7,
+		.Init.Channel = DMA_CHANNEL_4,
+		.Init.Direction = DMA_MEMORY_TO_PERIPH,
+		.Init.PeriphInc = DMA_PINC_DISABLE,
+		.Init.MemInc = DMA_MINC_ENABLE,
+		.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE,
+		.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE,
+		.Init.Mode = DMA_NORMAL,
+		.Init.Priority = DMA_PRIORITY_LOW,
+		.Init.FIFOMode = DMA_FIFOMODE_DISABLE,
+};
+
+DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity_rx =
 {
 		.Instance = DMA2_Stream2,
 		.Init.Channel = DMA_CHANNEL_4,
@@ -65,6 +81,8 @@ DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity =
 		.Init.Priority = DMA_PRIORITY_LOW,
 		.Init.FIFOMode = DMA_FIFOMODE_DISABLE,
 };
+
+DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

@@ -44,7 +44,11 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
+userData *Users_Profile_Rx = (userData *)(ADDRESS_DESTINATION_DATA);
+
 extern UART_HandleTypeDef huart_comm_ctrlboard_connectivity;
+extern DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity_tx;
+extern DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity_rx;
 extern DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity;
 
 /* USER CODE END PV */
@@ -106,13 +110,32 @@ void Comm_CtrlBoard_Connectivity_voidDeInit(void)
   * @brief  Start Communication between the control board
   * 		and the connectivity board to receive the data
   * 		sent by the connectivity module.
+  * @param  Copy_Pu8Src_Address_Data a pointer to the source
+  * 		address of the data that we will receive data at it.
+  * @param	Copy_u16DataSize the length of the data that we will
+  * 		send it by UART.
+  * @retval None
+  */
+void Comm_CtrlBoard_Connectivity_voidStart_CommunicationTx(uint8_t *Copy_Pu8Src_Address_Data, uint16_t Copy_u16DataSize)
+{
+	if(HAL_UART_Transmit_DMA(&huart_comm_ctrlboard_connectivity, Copy_Pu8Src_Address_Data, Copy_u16DataSize) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+
+/**
+  * @brief  Start Communication between the control board
+  * 		and the connectivity board to receive the data
+  * 		sent by the connectivity module.
   * @param  Copy_Pu8Dest_Address_Data a pointer to the destination
   * 		address of the data that we will receive data at it.
   * @param	Copy_u16DataSize the length of the data that we will
   * 		receive it by UART.
   * @retval None
   */
-void Comm_CtrlBoard_Connectivity_voidStart_Communication(uint8_t *Copy_Pu8Dest_Address_Data, uint16_t Copy_u16DataSize)
+void Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx(uint8_t *Copy_Pu8Dest_Address_Data, uint16_t Copy_u16DataSize)
 {
 	if(HAL_UART_Receive_DMA(&huart_comm_ctrlboard_connectivity, Copy_Pu8Dest_Address_Data, Copy_u16DataSize) != HAL_OK)
 	{
@@ -126,7 +149,7 @@ void Comm_CtrlBoard_Connectivity_voidStart_Communication(uint8_t *Copy_Pu8Dest_A
  */
 static void MX_DMA_Init(void)
 {
-	if(hdma_comm_ctrlboard_connectivity.Instance == DMA1_Stream5)
+	if(hdma_comm_ctrlboard_connectivity_rx.Instance == DMA1_Stream5)
 	{
 		/* DMA controller clock enable */
 		__HAL_RCC_DMA1_CLK_ENABLE();
@@ -135,9 +158,18 @@ static void MX_DMA_Init(void)
 		/* DMA1_Stream5_IRQn interrupt configuration */
 		HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
 		HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
-
 	}
-	else if(hdma_comm_ctrlboard_connectivity.Instance == DMA2_Stream2)
+	else if(hdma_comm_ctrlboard_connectivity_tx.Instance == DMA2_Stream7)
+	{
+		/* DMA controller clock enable */
+		__HAL_RCC_DMA2_CLK_ENABLE();
+
+		/* DMA interrupt init */
+		/* DMA2_Stream7_IRQn interrupt configuration */
+		  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
+		  HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+	}
+	else if(hdma_comm_ctrlboard_connectivity_rx.Instance == DMA2_Stream2)
 	{
 		/* DMA controller clock enable */
 		__HAL_RCC_DMA2_CLK_ENABLE();
@@ -191,14 +223,25 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 //		hdma_comm_ctrlboard_connectivity.Init.Mode = DMA_NORMAL;
 //		hdma_comm_ctrlboard_connectivity.Init.Priority = DMA_PRIORITY_LOW;
 //		hdma_comm_ctrlboard_connectivity.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-		if (HAL_DMA_Init(&hdma_comm_ctrlboard_connectivity) != HAL_OK)
+		if (HAL_DMA_Init(&hdma_comm_ctrlboard_connectivity_tx) != HAL_OK)
+		{
+		  Error_Handler();
+		}
+
+		__HAL_LINKDMA(huart,hdmatx,hdma_comm_ctrlboard_connectivity_tx);
+
+		if (HAL_DMA_Init(&hdma_comm_ctrlboard_connectivity_rx) != HAL_OK)
 		{
 			Error_Handler();
 		}
 
-		__HAL_LINKDMA(huart,hdmarx,hdma_comm_ctrlboard_connectivity);
+		__HAL_LINKDMA(huart,hdmarx,hdma_comm_ctrlboard_connectivity_rx);
 
 		/* USER CODE BEGIN USART1_MspInit 1 */
+
+		/* USART1 interrupt Init */
+		HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+		HAL_NVIC_EnableIRQ(USART1_IRQn);
 
 		/* USER CODE END USART1_MspInit 1 */
 	}
@@ -271,7 +314,13 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 		HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
 
 		/* USART1 DMA DeInit */
+		HAL_DMA_DeInit(huart->hdmatx);
+
+		/* USART1 DMA DeInit */
 		HAL_DMA_DeInit(huart->hdmarx);
+
+		/* USART1 interrupt DeInit */
+		HAL_NVIC_DisableIRQ(USART1_IRQn);
 		/* USER CODE BEGIN USART1_MspDeInit 1 */
 
 		/* USER CODE END USART1_MspDeInit 1 */
@@ -301,6 +350,12 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 
 /* USER CODE BEGIN 4 */
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	static int cnt = 0;
+	cnt++;
+}
+
 /**
   * @brief  Rx Transfer completed callbacks.
   * @param  huart  Pointer to a UART_HandleTypeDef structure that contains
@@ -309,7 +364,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
   */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	userData *ptr = (userData *)0x20000800;
+
 }
 
 /* USER CODE END 4 */

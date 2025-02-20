@@ -44,7 +44,8 @@
 
 void Comm_CtrlBoard_Connectivity_voidInit(void);
 void Comm_CtrlBoard_Connectivity_voidDeInit(void);
-void Comm_CtrlBoard_Connectivity_voidStart_Communication(uint8_t *Copy_Pu8Dest_Address_Data, uint16_t Copy_u16DataSize);
+void Comm_CtrlBoard_Connectivity_voidStart_CommunicationTx(uint8_t *Copy_Pu8Src_Address_Data, uint16_t Copy_u16DataSize);
+void Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx(uint8_t *Copy_Pu8Dest_Address_Data, uint16_t Copy_u16DataSize);
 
 /* USER CODE END EFP */
 
