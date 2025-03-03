@@ -50,11 +50,11 @@
 #define ADDRESS_SOURCE_DATA								(uint8_t *)((SRAM1_BASE) + (OFFSET_Tx))
 #define DATA_SIZE_Tx									100u
 
-#define OFFSET_Rx										0x800
-#define ADDRESS_DESTINATION_DATA						(uint8_t *)((SRAM1_BASE) + (OFFSET_Rx))
+//#define OFFSET_Rx										0x800
+//#define ADDRESS_DESTINATION_DATA						(uint8_t *)((SRAM1_BASE) + (OFFSET_Rx))
 
-#define NUM_USER										(1u)
-#define DATA_SIZE_Rx									(uint16_t)(67 * NUM_USER)
+//#define NUM_USER										(1u)
+//#define DATA_SIZE_Rx									(uint16_t)(67 * NUM_USER)
 
 typedef enum __attribute__((__packed__))
 {

@@ -58,6 +58,8 @@ static void MX_USART2_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+extern uint8_t MainBuf;
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == GPIO_PIN_8)
@@ -74,6 +76,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 		/* Call UART DMA to be ready to receive new data */
+		Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx((uint8_t *)MainBuf);
 	}
 }
 
@@ -110,6 +113,9 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+
+  Comm_CtrlBoard_Connectivity_voidInit();
+//  Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx(MainBuf);
 
 //  Comm_CtrlBoard_Connectivity_voidInit();
 //
