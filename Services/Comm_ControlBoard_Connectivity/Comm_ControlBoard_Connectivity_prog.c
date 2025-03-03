@@ -16,6 +16,7 @@
 /* USER CODE BEGIN Includes */
 
 #include <stdint.h>
+#include "string.h"
 
 #include "main.h"
 
@@ -38,13 +39,21 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define RxBuf_SIZE   			(5 * sizeof(userData))
+#define MainBuf_SIZE 			(10 * sizeof(userData))
+
+uint8_t RxBuf[RxBuf_SIZE];
+uint8_t MainBuf[MainBuf_SIZE];
+
+uint16_t oldPos = 0;
+uint16_t newPos = 0;
 
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
-userData *Users_Profile_Rx = (userData *)(ADDRESS_DESTINATION_DATA);
+//userData *Users_Profile_Rx = (userData *)(ADDRESS_DESTINATION_DATA);
 
 extern UART_HandleTypeDef huart_comm_ctrlboard_connectivity;
 extern DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity_tx;
@@ -65,12 +74,12 @@ extern DMA_HandleTypeDef hdma_comm_ctrlboard_connectivity;
 
 
 /**
-  * @brief  Initialize the Communication between the control board
-  * 		and the connectivity board according to the configuration
-  * 		in the Comm_ControlBoard_Connectivity_config.h file
-  * @param  None
-  * @retval None
-  */
+ * @brief  Initialize the Communication between the control board
+ * 		and the connectivity board according to the configuration
+ * 		in the Comm_ControlBoard_Connectivity_config.h file
+ * @param  None
+ * @retval None
+ */
 void Comm_CtrlBoard_Connectivity_voidInit(void)
 {
 	/* USER CODE BEGIN 1 */
@@ -95,11 +104,11 @@ void Comm_CtrlBoard_Connectivity_voidInit(void)
 
 
 /**
-  * @brief  DeInitialize the Communication between the control board
-  * 		and the connectivity board.
-  * @param  None
-  * @retval None
-  */
+ * @brief  DeInitialize the Communication between the control board
+ * 		and the connectivity board.
+ * @param  None
+ * @retval None
+ */
 void Comm_CtrlBoard_Connectivity_voidDeInit(void)
 {
 	HAL_UART_MspDeInit(&huart_comm_ctrlboard_connectivity);
@@ -107,15 +116,15 @@ void Comm_CtrlBoard_Connectivity_voidDeInit(void)
 
 
 /**
-  * @brief  Start Communication between the control board
-  * 		and the connectivity board to receive the data
-  * 		sent by the connectivity module.
-  * @param  Copy_Pu8Src_Address_Data a pointer to the source
-  * 		address of the data that we will receive data at it.
-  * @param	Copy_u16DataSize the length of the data that we will
-  * 		send it by UART.
-  * @retval None
-  */
+ * @brief  Start Communication between the control board
+ * 		and the connectivity board to receive the data
+ * 		sent by the connectivity module.
+ * @param  Copy_Pu8Src_Address_Data a pointer to the source
+ * 		address of the data that we will receive data at it.
+ * @param	Copy_u16DataSize the length of the data that we will
+ * 		send it by UART.
+ * @retval None
+ */
 void Comm_CtrlBoard_Connectivity_voidStart_CommunicationTx(uint8_t *Copy_Pu8Src_Address_Data, uint16_t Copy_u16DataSize)
 {
 	if(HAL_UART_Transmit_DMA(&huart_comm_ctrlboard_connectivity, Copy_Pu8Src_Address_Data, Copy_u16DataSize) != HAL_OK)
@@ -126,18 +135,26 @@ void Comm_CtrlBoard_Connectivity_voidStart_CommunicationTx(uint8_t *Copy_Pu8Src_
 
 
 /**
-  * @brief  Start Communication between the control board
-  * 		and the connectivity board to receive the data
-  * 		sent by the connectivity module.
-  * @param  Copy_Pu8Dest_Address_Data a pointer to the destination
-  * 		address of the data that we will receive data at it.
-  * @param	Copy_u16DataSize the length of the data that we will
-  * 		receive it by UART.
-  * @retval None
-  */
-void Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx(uint8_t *Copy_Pu8Dest_Address_Data, uint16_t Copy_u16DataSize)
+ * @brief  Start Communication between the control board
+ * 		and the connectivity board to receive the data
+ * 		sent by the connectivity module.
+ * @param  Copy_Pu8Dest_Address_Data a pointer to the destination
+ * 		address of the data that we will receive data at it.
+ * @param	Copy_u16DataSize the length of the data that we will
+ * 		receive it by UART.
+ * @retval None
+ */
+void Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx(uint8_t *Copy_Pu8Dest_Address_Data)
 {
-	if(HAL_UART_Receive_DMA(&huart_comm_ctrlboard_connectivity, Copy_Pu8Dest_Address_Data, Copy_u16DataSize) != HAL_OK)
+	//	if(HAL_UART_Receive_DMA(&huart_comm_ctrlboard_connectivity, Copy_Pu8Dest_Address_Data, Copy_u16DataSize) != HAL_OK)
+	//	{
+	//		Error_Handler();
+	//	}
+
+	HAL_StatusTypeDef Local_enuHALstate = HAL_UARTEx_ReceiveToIdle_DMA(&huart_comm_ctrlboard_connectivity, RxBuf, RxBuf_SIZE);
+	__HAL_DMA_DISABLE_IT(&hdma_comm_ctrlboard_connectivity_rx, DMA_IT_HT);
+
+	if(Local_enuHALstate != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -166,8 +183,8 @@ static void MX_DMA_Init(void)
 
 		/* DMA interrupt init */
 		/* DMA2_Stream7_IRQn interrupt configuration */
-		  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
-		  HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+		HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
+		HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 	}
 	else if(hdma_comm_ctrlboard_connectivity_rx.Instance == DMA2_Stream2)
 	{
@@ -213,19 +230,19 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 
 		/* USART1 DMA Init */
 		/* USART1_RX Init */
-//		hdma_comm_ctrlboard_connectivity.Instance = DMA2_Stream2;
-//		hdma_comm_ctrlboard_connectivity.Init.Channel = DMA_CHANNEL_4;
-//		hdma_comm_ctrlboard_connectivity.Init.Direction = DMA_PERIPH_TO_MEMORY;
-//		hdma_comm_ctrlboard_connectivity.Init.PeriphInc = DMA_PINC_DISABLE;
-//		hdma_comm_ctrlboard_connectivity.Init.MemInc = DMA_MINC_ENABLE;
-//		hdma_comm_ctrlboard_connectivity.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-//		hdma_comm_ctrlboard_connectivity.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-//		hdma_comm_ctrlboard_connectivity.Init.Mode = DMA_NORMAL;
-//		hdma_comm_ctrlboard_connectivity.Init.Priority = DMA_PRIORITY_LOW;
-//		hdma_comm_ctrlboard_connectivity.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+		//		hdma_comm_ctrlboard_connectivity.Instance = DMA2_Stream2;
+		//		hdma_comm_ctrlboard_connectivity.Init.Channel = DMA_CHANNEL_4;
+		//		hdma_comm_ctrlboard_connectivity.Init.Direction = DMA_PERIPH_TO_MEMORY;
+		//		hdma_comm_ctrlboard_connectivity.Init.PeriphInc = DMA_PINC_DISABLE;
+		//		hdma_comm_ctrlboard_connectivity.Init.MemInc = DMA_MINC_ENABLE;
+		//		hdma_comm_ctrlboard_connectivity.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+		//		hdma_comm_ctrlboard_connectivity.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+		//		hdma_comm_ctrlboard_connectivity.Init.Mode = DMA_NORMAL;
+		//		hdma_comm_ctrlboard_connectivity.Init.Priority = DMA_PRIORITY_LOW;
+		//		hdma_comm_ctrlboard_connectivity.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 		if (HAL_DMA_Init(&hdma_comm_ctrlboard_connectivity_tx) != HAL_OK)
 		{
-		  Error_Handler();
+			Error_Handler();
 		}
 
 		__HAL_LINKDMA(huart,hdmatx,hdma_comm_ctrlboard_connectivity_tx);
@@ -356,15 +373,46 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	cnt++;
 }
 
-/**
-  * @brief  Rx Transfer completed callbacks.
-  * @param  huart  Pointer to a UART_HandleTypeDef structure that contains
-  *                the configuration information for the specified UART module.
-  * @retval None
-  */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
+///**
+// * @brief  Rx Transfer completed callbacks.
+// * @param  huart  Pointer to a UART_HandleTypeDef structure that contains
+// *                the configuration information for the specified UART module.
+// * @retval None
+// */
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+//{
+//
+//}
 
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	if (huart->Instance == USART1)
+	{
+		oldPos = newPos;  // Update the last position before copying new data
+
+		/* If the data in large and it is about to exceed the buffer size, we have to route it to the start of the buffer
+		 * This is to maintain the circular buffer
+		 * The old data in the main buffer will be overlapped
+		 */
+		if (oldPos+Size > MainBuf_SIZE)  // If the current position + new data size is greater than the main buffer
+		{
+			uint16_t datatocopy = MainBuf_SIZE-oldPos;  // find out how much space is left in the main buffer
+			memcpy ((uint8_t *)MainBuf+oldPos, RxBuf, datatocopy);  // copy data in that remaining space
+
+			oldPos = 0;  // point to the start of the buffer
+			memcpy ((uint8_t *)MainBuf, (uint8_t *)RxBuf+datatocopy, (Size-datatocopy));  // copy the remaining data
+			newPos = (Size-datatocopy);  // update the position
+		}
+
+		/* if the current position + new data size is less than the main buffer
+		 * we will simply copy the data into the buffer and update the position
+		 */
+		else
+		{
+			memcpy ((uint8_t *)MainBuf+oldPos, RxBuf, Size);
+			newPos = Size+oldPos;
+		}
+	}
 }
 
 /* USER CODE END 4 */
