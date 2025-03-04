@@ -80,6 +80,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
+typedef struct
+{
+	double Latitude; //latitude in degrees with decimal places
+	char LatSide;  // N or S
+	double Longitude; //longitude in degrees with decimal places
+	char LonSide; // E or W
+}GPS_Readings;
 /* USER CODE END 0 */
 
 /**
@@ -115,6 +122,15 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   Comm_CtrlBoard_Connectivity_voidInit();
+
+  GPS_Readings gps1;
+  gps1.Latitude = 41.356;
+  gps1.LatSide = 'N';
+  gps1.Longitude = 69.368;
+  gps1.LonSide = 'W';
+
+//  uint8_t *ptr = (uint8_t *)&gps1;
+  uint8_t *ptr = "48.858844,N,2.294351,E";
 //  Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx(MainBuf);
 
 //  Comm_CtrlBoard_Connectivity_voidInit();
@@ -136,6 +152,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  Comm_CtrlBoard_Connectivity_voidStart_CommunicationTx(ptr, 23);
+	  HAL_Delay(5000);
   }
   /* USER CODE END 3 */
 }

@@ -369,8 +369,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	static int cnt = 0;
-	cnt++;
+//	static int cnt = 0;
+//	cnt++;
 }
 
 ///**
