@@ -40,10 +40,10 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 #define RxBuf_SIZE   			(5 * sizeof(userData))
-#define MainBuf_SIZE 			(10 * sizeof(userData))
+#define DB_Backup_SIZE 			(10 * sizeof(userData))
 
 uint8_t RxBuf[RxBuf_SIZE];
-uint8_t MainBuf[MainBuf_SIZE];
+uint8_t DB_Backup[DB_Backup_SIZE];
 
 uint16_t oldPos = 0;
 uint16_t newPos = 0;
@@ -157,6 +157,31 @@ void Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx(uint8_t *Copy_Pu8Dest
 	if(Local_enuHALstate != HAL_OK)
 	{
 		Error_Handler();
+	}
+}
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == GPIO_PIN_8)
+	{
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+		/* Send Remote Frame to Bluepill to get GPS Reading */
+		//CAN Code
+		/* Toggling PB5 to make external interrupts on bluepill to tell it that we need gps readings */
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, SET);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, RESET);
+
+		/* Send GPS Reading to Connectivity or set flag to be ready to send data when we receive it */
+		//UART Code
+	}
+
+	if(GPIO_Pin == GPIO_PIN_7)
+	{
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		/* Call UART DMA to be ready to receive new data */
+		Comm_CtrlBoard_Connectivity_voidStart_CommunicationRx((uint8_t *)DB_Backup);
 	}
 }
 
@@ -369,8 +394,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-//	static int cnt = 0;
-//	cnt++;
+	//	static int cnt = 0;
+	//	cnt++;
 }
 
 ///**
@@ -394,13 +419,13 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		 * This is to maintain the circular buffer
 		 * The old data in the main buffer will be overlapped
 		 */
-		if (oldPos+Size > MainBuf_SIZE)  // If the current position + new data size is greater than the main buffer
+		if (oldPos+Size > DB_Backup_SIZE)  // If the current position + new data size is greater than the main buffer
 		{
-			uint16_t datatocopy = MainBuf_SIZE-oldPos;  // find out how much space is left in the main buffer
-			memcpy ((uint8_t *)MainBuf+oldPos, RxBuf, datatocopy);  // copy data in that remaining space
+			uint16_t datatocopy = DB_Backup_SIZE-oldPos;  // find out how much space is left in the main buffer
+			memcpy ((uint8_t *)DB_Backup+oldPos, RxBuf, datatocopy);  // copy data in that remaining space
 
 			oldPos = 0;  // point to the start of the buffer
-			memcpy ((uint8_t *)MainBuf, (uint8_t *)RxBuf+datatocopy, (Size-datatocopy));  // copy the remaining data
+			memcpy ((uint8_t *)DB_Backup, (uint8_t *)RxBuf+datatocopy, (Size-datatocopy));  // copy the remaining data
 			newPos = (Size-datatocopy);  // update the position
 		}
 
@@ -409,7 +434,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 		 */
 		else
 		{
-			memcpy ((uint8_t *)MainBuf+oldPos, RxBuf, Size);
+			memcpy ((uint8_t *)DB_Backup+oldPos, RxBuf, Size);
 			newPos = Size+oldPos;
 		}
 	}

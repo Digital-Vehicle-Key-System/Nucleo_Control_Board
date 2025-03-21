@@ -87,6 +87,32 @@ typedef struct __attribute__((__packed__))
 
 } userData;
 
+typedef struct {
+	int hour;
+	int min;
+	int sec;
+}TIME;
+
+typedef struct {
+	int Day;
+	int Mon;
+	int Yr;
+}DATE;
+
+typedef struct {
+	float latitude;
+	char NS;
+	float longitude;
+	char EW;
+}LOCATION;
+
+typedef struct
+{
+	LOCATION gps_location;
+	TIME reading_time;
+	DATE reading_date;
+}GPS_Data;
+
 /* USER CODE END Private defines */
 
 #endif /* COMM_CONTROLBOARD_CONNECTIVITY_COMM_CONTROLBOARD_CONNECTIVITY_CONFIG_H_ */
